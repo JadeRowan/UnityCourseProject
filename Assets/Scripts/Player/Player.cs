@@ -1,6 +1,7 @@
 using System;
 using Core.Enums;
 using Core.Tools;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Player
@@ -8,6 +9,8 @@ namespace Player
     [RequireComponent(typeof(Rigidbody2D))]
     public class Player : MonoBehaviour
     {
+        [SerializeField] private Animator _animator;
+        
         [Header("HorizontalMovement")] 
         [SerializeField] private float _horizontalSpeed;
 
@@ -36,11 +39,14 @@ namespace Player
         
         private float _sizeModificator;
         private bool _isJumping;
+        private bool _isStriking;
         private float _startJumpVerticalPosition;
         private Vector2 _shadowLocalPosition;
         private float _shadowVerticalPosition;
         private Vector3 _shadowLocalScale;
 
+        private Vector2 _movement;
+        private AnimationType _currentAnimationType;
         private void Start()
         {
             _rigidbody = GetComponent<Rigidbody2D>();
@@ -55,6 +61,7 @@ namespace Player
 
         public void MoveHorizontally(float direction)
         {
+            _movement.x = direction;
             SetDirection(direction);
             Vector2 velocity = _rigidbody.velocity;
             velocity.x = direction * _horizontalSpeed;
@@ -81,6 +88,8 @@ namespace Player
         {
             if (_isJumping)
                 return;
+
+            _movement.y = direction;
             Vector2 velocity = _rigidbody.velocity;
             velocity.y = direction * _verticalSpeed;
             _rigidbody.velocity = velocity;
@@ -119,7 +128,13 @@ namespace Player
             {
                 UpdateJump();
             }
+
+            PlayAnimation(AnimationType.Idle, true);
+            PlayAnimation(AnimationType.Move, _movement.magnitude > 0);
+            PlayAnimation(AnimationType.Jump, _isJumping);
+            PlayAnimation(AnimationType.Strike, _isStriking);
         }
+
 
         private void UpdateJump()
         {
@@ -143,6 +158,35 @@ namespace Player
             _shadow.color = Color.white;
             _rigidbody.position = new Vector2(_rigidbody.position.x, _startJumpVerticalPosition);
             _rigidbody.gravityScale = 0;
+        }
+
+        private void PlayAnimation(AnimationType animationType, bool active)
+        {
+            // print("Gating animationType" + animationType + " active " + active);
+            if (!active)
+            {
+                if (_currentAnimationType == AnimationType.Idle || _currentAnimationType != animationType)
+                    return;
+
+                _currentAnimationType = AnimationType.Idle;
+                PlayAnimation(_currentAnimationType);
+                return;
+            }
+            if (_currentAnimationType >= animationType)
+                return;
+            _currentAnimationType = animationType;
+            PlayAnimation(_currentAnimationType);
+
+        }
+        
+        private void PlayAnimation(AnimationType animationType)
+        {
+            _animator.SetInteger(nameof(AnimationType), (int)animationType);
+        }
+
+        public void Strike(bool active)
+        {
+            _isStriking = active;
         }
     }
 }

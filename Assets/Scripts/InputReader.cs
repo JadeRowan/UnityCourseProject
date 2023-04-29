@@ -17,6 +17,7 @@ public class InputReader : MonoBehaviour
 
         if (Input.GetButtonDown("Jump"))
             _playerEntity.Jump();
+        _playerEntity.Strike(Input.GetButtonDown("Fire1"));
     }
 
     private void FixedUpdate()
